@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>古着屋に潜む謎 - #古着de行こか。一乗寺店</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght=700;900&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            background-color: #000;
+            overflow-x: hidden;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            color: #e0e0e0;
+        }
+        
+        /* --- ローディング画面 --- */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            transition: opacity 0.5s ease-in-out; /* フェードアウト用 */
+        }
+        .loader-text {
+            font-family: 'VT323', monospace; /* ドット絵風フォント */
+            font-size: 2.5rem;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            width: 300px;
+            height: 25px;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 10px #00ffff;
+        }
+        .progress {
+            width: 0;
+            height: 100%;
+            background-color: #00ffff;
+            animation: loading-animation 3s linear forwards;
+        }
+        @keyframes loading-animation {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        
+        /* --- メインコンテンツ --- */
+        #main-content {
+            background-color: #000;
+            opacity: 0; /* 最初は非表示 */
+            visibility: hidden; /* 操作も不可に */
+            transition: opacity 0.5s ease-in-out; /* フェードイン用 */
+        }
+        #main-content.loaded {
+            opacity: 1; /* 表示する */
+            visibility: visible;
+        }
+
+        /* --- 背景の走査線 --- */
+        #main-content::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: repeating-linear-gradient(
+                0deg,
+                rgba(255, 255, 255, 0.07),
+                rgba(255, 255, 255, 0.07) 1px,
+                transparent 1px,
+                transparent 4px
+            );
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        @keyframes glitch {
+            0% { transform: translate(0); } 20% { transform: translate(-3px, 3px); } 40% { transform: translate(-3px, -3px); } 60% { transform: translate(3px, 3px); } 80% { transform: translate(3px, -3px); } 100% { transform: translate(0); }
+        }
+        
+        .title-font {
+            font-family: 'Noto Serif JP', serif; font-weight: 900;
+        }
+        .card, .rules-bg {
+            background-color: rgba(10, 10, 10, 0.85); border: 2px solid #ff0000; backdrop-filter: blur(2px); box-shadow: 0 0 20px rgba(255, 0, 0, 0.5), inset 0 0 15px rgba(255,0,0,0.3); position: relative;
+        }
+        
+        .header-bg {
+             background-color: rgba(10, 10, 10, 0.85); 
+             border: 2px solid #ff0000; 
+             backdrop-filter: blur(2px); 
+             box-shadow: 0 0 20px rgba(255, 0, 0, 0.5), inset 0 0 15px rgba(255,0,0,0.3); 
+             position: relative;
+             animation: glitch 0.7s cubic-bezier(.25, .46, .45, .94) both infinite;
+             transform-style: preserve-3d; /* 3D空間を有効化 */
+        }
+        .header-content-wrapper {
+             transform: translateZ(1px); /* コンテンツを前面に押し出す */
+        }
+
+        .hidden {
+            display: none;
+        }
+        .button-style {
+            background-color: #990000; border: 1px solid #ff3333; color: white; padding: 12px 24px; font-weight: bold; font-size: 1.1rem; border-radius: 8px; cursor: pointer; transition: background-color 0.3s, transform 0.2s; box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); text-shadow: 0 0 5px #fff;
+        }
+        .button-style:hover {
+            background-color: #cc0000; transform: translateY(-2px);
+        }
+        .riddle-image {
+            border: 2px solid #7f1d1d; box-shadow: 0 0 15px rgba(127, 29, 29, 0.5); transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .riddle-image:hover {
+            transform: scale(1.03); box-shadow: 0 0 25px rgba(176, 29, 29, 0.8);
+        }
+        .page-section {
+             min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; position: relative; z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ローディング画面 -->
+    <div id="loader">
+        <div class="loader-text">LOADING...</div>
+        <div class="progress-bar">
+            <div class="progress"></div>
+        </div>
+    </div>
+    
+    <!-- メインコンテンツ (最初は非表示) -->
+    <div id="main-content" class="py-8">
+        <div id="page-container" class="w-full max-w-5xl mx-auto">
+
+            <!-- ページ1: イントロダクション -->
+            <section id="page1" class="page-section text-center">
+                <div class="header-bg py-16 sm:py-24 rounded-xl">
+                    <div class="header-content-wrapper">
+                        <div class="container mx-auto px-4">
+                            <h1 class="title-font text-6xl md:text-7xl font-black text-red-500" style="text-shadow: 0 0 10px #ff0000;">ようこそ、諸君</h1>
+                            <p class="text-xl md:text-2xl mt-4 text-gray-300">#古着de行こか。一乗寺店プレゼンツ</p>
+                            <p class="mt-6 max-w-2xl mx-auto text-gray-300 leading-relaxed">
+                                この店に迷い込みし者よ、ようこそ絶望の入り口へ。<br>
+                                ここに宿るは、凡人の知恵では到底解けぬ三つの呪い。<br>
+                                お前のその陳腐なプライド、ここでへし折ってやろう。生き残れると思うな。
+                            </p>
+                            <button id="go-to-rules-btn" class="button-style mt-12">
+                                絶望ニ身ヲ委ネル
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ページ2: ルール -->
+            <section id="page2" class="page-section hidden text-center">
+                   <div class="rules-bg rounded-xl p-8 md:p-12">
+                     <div class="container mx-auto px-4 relative z-10">
+                        <h2 class="title-font text-5xl text-center mb-8 text-yellow-300" style="text-shadow: 0 0 10px #ffff00;">禁断ノ掟</h2>
+                        <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 text-center text-base">
+                            <div class="bg-black/30 p-6 rounded-lg border border-red-400/50">
+                                <h3 class="font-bold text-xl mb-2 text-gray-200">掟 其ノ壱</h3>
+                                <p class="text-gray-300 leading-relaxed">答えはレジにて入力するといい。無様にひれ伏すがいい。</p>
+                            </div>
+                            <div class="bg-black/30 p-6 rounded-lg border border-red-400/50">
+                                <h3 class="font-bold text-xl mb-2 text-gray-200">掟 其ノ弐</h3>
+                                <p class="text-gray-300 leading-relaxed">奇跡的に答えにたどり着いたものも、他人やSNSにお漏らしするでない。一生呪う。</p>
+                            </div>
+                            <div class="bg-black/30 p-6 rounded-lg border border-red-400/50">
+                                <h3 class="font-bold text-xl mb-2 text-gray-200">掟 其ノ参</h3>
+                                <p class="text-gray-300 leading-relaxed">答えは数字。だが、それは単なる数字ではない。お前の浅知恵を嘲笑う、悪魔の数列だ。</p>
+                            </div>
+                        </div>
+                        <button id="go-to-riddles-btn" class="button-style mt-12 inline-block">
+                            謎に挑む
+                        </button>
+                    </div>
+                   </div>
+            </section>
+
+            <!-- ページ3: 謎解き -->
+            <section id="page3" class="hidden text-center p-4 md:p-8">
+                <main>
+                    <!-- 謎解きセクション -->
+                    <section id="riddles" class="my-16">
+                        <h2 class="title-font text-5xl text-center mb-12 text-red-500" style="text-shadow: 0 0 10px #ff0000;">三ツノ試練</h2>
+                        <!-- 追加された行 -->
+                        <p class="text-lg text-gray-300 mb-8">答えはレジにてクーポン利用を選択し、確認せよ。</p>
+                        <p class="text-lg text-gray-300 mb-8">獲得したクーポンは9月30日まで利用できる。</p>
+
+
+                        <!-- 謎1 -->
+                        <div class="card rounded-xl p-6 md:p-8 mb-12 flex flex-col md:flex-row items-center gap-8">
+                            <div class="md:w-1/2">
+                                <h3 class="title-font text-3xl text-red-500 mb-4">第一ノ試練</h3>
+                                <p class="mb-4 text-gray-300 leading-relaxed">文字の羅列に意味など無いと思うか？愚か者め。この程度の暗号、解けねば先は無いぞ。</p>
+                                <div class="bg-red-900/50 p-4 rounded-lg">
+                                    <h4 class="font-bold text-lg text-yellow-300">成功報酬</h4>
+                                    <p class="text-white text-xl font-bold">店内商品 10% 割引</p>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2">
+                                <!-- 謎1の画像と追加されたテキスト -->
+                                <div class="bg-gray-800/50 p-4 rounded-lg mb-4 text-left">
+                                    <p class="text-lg text-white font-bold mb-2">アルファベットの足し算です。</p>
+                                    <p class="text-lg text-white font-bold mb-2">⬜︎⬜︎の部分に入る数字は何でしょうか？</p>
+                                    <p class="text-xl text-yellow-300 font-bold">A+K＋A＝15</p>
+                                    <p class="text-xl text-yellow-300 font-bold">K＋K＋J＝35</p>
+                                    <p class="text-xl text-yellow-300 font-bold">A+Q＋Q＝⬜︎⬜︎</p>
+                                    <p class="text-xl text-yellow-300 font-bold">A＋K＋J＝⬜︎⬜︎</p>
+                                    <p class="text-xl text-red-400 font-bold mt-4">⬜︎⬜︎⬜︎⬜︎の順に入力してください</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 謎2 -->
+                        <div class="card rounded-xl p-6 md:p-8 mb-12 flex flex-col md:flex-row-reverse items-center gap-8">
+                            <div class="md:w-1/2">
+                                <h3 class="title-font text-3xl text-red-500 mb-4">第二ノ試練</h3>
+                                <p class="mb-4 text-gray-300 leading-relaxed">数字と言葉、その陳腐な繋がりを見抜けぬ者に、価値などない。さあ、絶望の淵を覗いてみるがいい。</p>
+                                   <div class="bg-red-900/50 p-4 rounded-lg">
+                                    <h4 class="font-bold text-lg text-yellow-300">成功報酬</h4>
+                                    <p class="text-white text-xl font-bold">4000円以上購入で1000円引き</p>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2">
+                                <!-- 謎2の画像を削除し、テキストを追加 -->
+                                <div class="bg-gray-800/50 p-4 rounded-lg mb-4 text-left">
+                                    <p class="text-xl text-yellow-300 font-bold">1+4+7=あたま</p>
+                                    <p class="text-xl text-yellow-300 font-bold">3+2+5=さかな</p>
+                                    <p class="text-xl text-yellow-300 font-bold">1+2+9+9=あかり</p>
+                                    <p class="text-xl text-red-400 font-bold mt-4">〇+〇+〇+〇+〇+〇=あつい</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 謎3 -->
+                        <div class="card rounded-xl p-6 md:p-8 mb-12 flex flex-col md:flex-row items-center gap-8">
+                            <div class="md:w-1/2">
+                                <h3 class="title-font text-3xl text-red-500 mb-4">第三ノ試練</h3>
+                                <p class="mb-4 text-gray-300 leading-relaxed">これが最後の警告だ。無秩序に見えるか？それはお前の頭が無秩序なだけだ。法則を見つけ出し、ひれ伏すがいい。</p>
+                                   <div class="bg-red-900/50 p-4 rounded-lg">
+                                    <h4 class="font-bold text-lg text-yellow-300">成功報酬</h4>
+                                    <p class="text-white text-xl font-bold">店内商品 30% OFF</p>
+                                </div>
+                            </div>
+                            <div class="md:w-1/2">
+                                <!-- 謎3の画像を削除し、テキストを追加 -->
+                                <div class="bg-gray-800/50 p-4 rounded-lg mb-4 text-left">
+                                    <p class="text-lg text-white font-bold mb-2">数字と英単語の間に隠された変換法則を見つけ出し、</p>
+                                    <p class="text-lg text-white font-bold mb-2">⚪︎に入る数字を導き出し、左から順に入力してください。</p>
+                                    <p class="text-xl text-yellow-300 font-bold">2/1+1/1 ＝ NO</p>
+                                    <p class="text-xl text-yellow-300 font-bold">3/4+1/4+2/4 ＝ UFO</p>
+                                    <p class="text-xl text-yellow-300 font-bold">1/7+2/5+1/9+3/8 ＝ SING</p>
+                                    <p class="text-xl text-red-400 font-bold mt-4">⚪︎/5+⚪︎/6+⚪︎/7+⚪︎/8=FISH</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- 全問正解特典セクション -->
+                    <section id="grand-prize" class="my-16 text-center">
+                           <div class="card rounded-xl p-8 max-w-4xl mx-auto">
+                             <h2 class="title-font text-4xl text-center mb-4 text-yellow-300" style="text-shadow: 0 0 10px #ffff00;">完全ナル勝利者ヘ</h2>
+                             <p class="text-lg mb-6 text-gray-200 leading-relaxed">
+                                 ほう、ここまで辿り着いたか。だが、まだ喜ぶのは早いぞ。<br>
+                                 真の勝者は、この最後の関門を越えた者のみ。貴様の運、ここで尽きるかもしれぬな。
+                             </p>
+                             <div class="bg-yellow-900/30 border border-yellow-600 p-6 rounded-lg">
+                                 <h3 class="font-bold text-2xl text-yellow-300 mb-2">特別報酬</h3>
+                                 <p class="text-white text-lg">
+                                     正解者の中から抽選で3名様に、<br><span class="font-bold text-2xl">店内商品4000円以内を1点GETする権利を与える。</span><br>
+                                     <span class="font-bold text-lg">＃古着de行こか。一乗寺店Instagram DMにて答えを記入すること。</span>
+                                 </p>
+                             </div>
+                             <a href="https://www.instagram.com/furugideikoka_ichijoji/" target="_blank" class="mt-8 inline-block bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300">
+                                 Instagramへ
+                             </a>
+                           </div>
+                    </section>
+
+                    <!-- 期間セクション -->
+                    <section id="period" class="my-12 text-center">
+                        <h2 class="title-font text-3xl text-red-500 mb-2" style="text-shadow: 0 0 10px #ff0000;">挑戦期間</h2>
+                        <p class="text-2xl font-bold text-white">2025年 8月1日 (金) - 9月30日 (火)</p>
+                    </section>
+                </main>
+
+                <!-- フッター -->
+                <footer class="text-center p-6 border-t border-gray-800 mt-12">
+                    <p class="font-bold text-lg">#古着de行こか。一乗寺店</p>
+                    <p class="text-sm text-gray-500">&copy; 2025 Furugi de Ikoka. All Rights Reserved.</p>
+                </footer>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // DOMの読み込みが完了した時点で、すべてのスクリプトを実行
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 要素を一度に取得 ---
+            const loader = document.getElementById('loader');
+            const mainContent = document.getElementById('main-content');
+            const page1 = document.getElementById('page1');
+            const page2 = document.getElementById('page2');
+            const page3 = document.getElementById('page3');
+            const goToRulesBtn = document.getElementById('go-to-rules-btn');
+            const goToRiddlesBtn = document.getElementById('go-to-riddles-btn');
+
+            // --- 初期ロード処理 ---
+            // 3秒後にローディング画面をフェードアウトさせ、メインコンテンツをフェードインさせる
+            setTimeout(() => {
+                if (loader) {
+                    loader.style.opacity = '0';
+                    // transitionが完了したら、要素を完全に非表示にする
+                    loader.addEventListener('transitionend', () => {
+                        loader.style.display = 'none';
+                    }, { once: true }); // イベントリスナーを一度だけ実行する
+                }
+                if (mainContent) {
+                    mainContent.classList.add('loaded');
+                }
+            }, 3000); // 3000ミリ秒 = 3秒
+
+            // --- ページ遷移関数 ---
+            function switchPage(fromPage, toPage) {
+                if (!fromPage || !toPage) return;
+                
+                // 実際のページ切り替え
+                fromPage.classList.add('hidden');
+                toPage.classList.remove('hidden');
+                window.scrollTo(0, 0); // 新しいページのトップにスクロール
+            }
+
+            // --- ボタンのイベントリスナー ---
+            // 各要素が存在することを確認してからイベントリスナーを追加
+            if (goToRulesBtn) {
+                goToRulesBtn.addEventListener('click', () => {
+                    switchPage(page1, page2);
+                });
+            }
+
+            if (goToRiddlesBtn) {
+                goToRiddlesBtn.addEventListener('click', () => {
+                    switchPage(page2, page3);
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
